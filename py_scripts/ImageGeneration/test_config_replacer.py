@@ -28,6 +28,7 @@ class ConfigReplacerTestCase(unittest.TestCase):
         # Create a test settings file
         settings = {
             "BootBlockAndHeader.xml": {
+                "//": "this is a comment",
                 "MC_CONFIG": "0x05"
             }
         }
@@ -61,16 +62,18 @@ class ConfigReplacerTestCase(unittest.TestCase):
         content = ET.SubElement(element, "content")
         content.text = "0x01"
         e2 = ET.SubElement(root, "BinField")
-        name2 = ET.SubElement(element, "name")
+        name2 = ET.SubElement(e2, "name")
         name2.text = "HOST_IF"
-        content2 = ET.SubElement(element, "content")
+        content2 = ET.SubElement(e2, "content")
         content2.text = "0x01"
         tree = ET.ElementTree(root)
         tree.write(self.xml_file)
 
         # Define the replacement dictionary
         replacements = {
-            "MC_CONFIG": "0x05"
+            "MC_CONFIG": "0x05",
+            "comment": "this is a comment",
+            "//": "this is a comment"
         }
         not_exist_replacement = {
             "MC_CONFIG1": "0x05"
@@ -79,12 +82,20 @@ class ConfigReplacerTestCase(unittest.TestCase):
         # Test replacing values in the XML file
         replace_value_in_xml(self.xml_file, replacements, self.target_xml_file)
 
-        # Verify the replaced values
+        # Verify the replaced values, and other value should not be changed
         target_tree = ET.parse(self.target_xml_file)
         target_root = target_tree.getroot()
-        target_element = target_root.find("BinField")
+        target_elements = target_root.findall("BinField")
+        target_element = target_elements[0]
         target_content = target_element.find("content")
         self.assertEqual(target_content.text, "0x05")
+        target_content = target_element.find("name")
+        self.assertEqual(target_content.text, "MC_CONFIG")
+        target_element = target_elements[1]
+        target_content = target_element.find("content")
+        self.assertEqual(target_content.text, "0x01")
+        target_content = target_element.find("name")
+        self.assertEqual(target_content.text, "HOST_IF")
         self.assertRaises(ValueError, replace_value_in_xml, self.xml_file, not_exist_replacement, self.target_xml_file)
 
     def test_replace_value_in_py(self):

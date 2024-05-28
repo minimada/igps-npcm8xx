@@ -94,6 +94,9 @@ def replace_value_in_xml(xml_file: str, dict: dict[str, str], target_xml: str = 
     elements = root.findall("BinField")
     # replace all the value pairs we defined
     for tag, value in dict.items():
+        # ignore comments
+        if tag == "comment" or tag == "//":
+            continue
         # search all the elements
         search_count = 0
         for element in elements:
@@ -108,7 +111,7 @@ def replace_value_in_xml(xml_file: str, dict: dict[str, str], target_xml: str = 
             else:
                 search_count += 1
         if search_count == len(elements):
-            raise ValueError(f"Error: {tag} not found in the xml file")
+            raise ValueError(f"Error: TAG \"{tag}\" not found in the xml file")
     # write the xml file
     if target_xml is not None:
         tree.write(target_xml)
