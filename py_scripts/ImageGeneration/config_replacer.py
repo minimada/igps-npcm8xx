@@ -62,10 +62,22 @@ def load_settings(file: str = SETTING_FILE) -> dict[str, dict[str, str]]:
         data = f.read().strip()
         if len(data) > 0:
             settings = json.loads(data)
+    # remove comments
+    def remove_comment(d: dict):
+        if "//" in d:
+            del d["//"]
+        if "comment" in d:
+            del d["comment"]
+    remove_comment(settings)
     # check settings format
-    for config, values in settings.items():
+    for config in list(settings.keys()):
+        values = settings[config]
         if not isinstance(values, dict):
             raise ValueError(f"Error: Invalid format in settings file for {config}")
+        remove_comment(settings[config])
+        if len(settings[config]) == 0:
+            del settings[config]
+            continue
         for key, value in values.items():
             if not isinstance(key, str) or not isinstance(value, str):
                 raise ValueError(f"Error: Invalid format in settings file for {config}")
@@ -94,9 +106,6 @@ def replace_value_in_xml(xml_file: str, dict: dict[str, str], target_xml: str = 
     elements = root.findall("BinField")
     # replace all the value pairs we defined
     for tag, value in dict.items():
-        # ignore comments
-        if tag == "comment" or tag == "//":
-            continue
         # search all the elements
         search_count = 0
         for element in elements:
